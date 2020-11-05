@@ -1,23 +1,27 @@
-# Compiled class file
-*.class
-
-# Log file
+*~
+~*
+*.diff
+*.patch
+*.bak
+.DS_Store
+*.swp
+*.swo
 *.log
+*.log.*
 
-# BlueJ files
-*.ctxt
+/.vscode/
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+node_modules/
+.sass-cache/
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+/.bundle/
+/vendor/bundle
+*.gem
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
+yarn.lock
+package-lock.json
+Gemfile.lock
+
+_site/
+.jekyll-metadata
+.jekyll-cache/
