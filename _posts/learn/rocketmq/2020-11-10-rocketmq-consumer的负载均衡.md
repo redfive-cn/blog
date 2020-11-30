@@ -4,11 +4,19 @@ layout: article
 tags: learn rocketmq
 ---
 
-在RocketMQ中，Consumer端的两种消费模式（Push/Pull）都是基于拉模式来获取消息的，而在Push模式只是对pull模式的一种封装，其本质实现为消息拉取线程在从服务器拉取到一批消息后，然后提交到消息消费线程池后，又“马不停蹄”的继续向服务器再次尝试拉取消息。如果未拉取到消息，则延迟一下又继续拉取。在两种基于拉模式的消费方式（Push/Pull）中，均需要Consumer端在知道从Broker端的哪一个消息队列—队列中去获取消息。因此，有必要在Consumer端来做负载均衡，即Broker端中多个MessageQueue分配给同一个ConsumerGroup中的哪些Consumer消费。
+在RocketMQ中，Consumer端的两种消费模式（Push/Pull）都是基于拉模式来获取消息的，
+而在Push模式只是对pull模式的一种封装，其本质实现为消息拉取线程在从服务器拉取到一批消息后，
+然后提交到消息消费线程池后，又“马不停蹄”的继续向服务器再次尝试拉取消息。
+如果未拉取到消息，则延迟一下又继续拉取。
+在两种基于拉模式的消费方式（Push/Pull）中，
+均需要Consumer端在知道从Broker端的哪一个消息队列—队列中去获取消息。
+因此，有必要在Consumer端来做负载均衡，即Broker端中多个MessageQueue分配给同一个ConsumerGroup中的哪些Consumer消费。
 
 ## consumer的心跳包
-在Consumer启动后，consumer会通过定时任务不断地向RocketMQ集群中的所有Broker实例发送心跳包（其中包含了，消息消费分组名称、订阅关系集合、消息通信模式和客户端id的值等信息）。
-Broker端在收到Consumer的心跳消息后，会将它维护在ConsumerManager的本地缓存变量—consumerTable，同时并将封装后的客户端网络通道信息保存在本地缓存变量—channelInfoTable中，为之后做Consumer端的负载均衡提供可以依据的元数据信息。
+在Consumer启动后，consumer会通过定时任务不断地向RocketMQ集群中的所有Broker实例发送心跳包
+（其中包含了，消息消费分组名称、订阅关系集合、消息通信模式和客户端id的值等信息）。
+Broker端在收到Consumer的心跳消息后，会将它维护在ConsumerManager的本地缓存变量—consumerTable，
+同时并将封装后的客户端网络通道信息保存在本地缓存变量—channelInfoTable中，为之后做Consumer端的负载均衡提供可以依据的元数据信息。
 
 ## Consumer端实现负载均衡的核心类—RebalanceImpl
 
@@ -309,14 +317,18 @@ public abstract class RebalanceImpl {
 
 3.使用`AllocateMessageQueueStrategy`计算出新的messageQueue
 
-4.移除processQueue:在`updateProcessQueueTableInRebalance`方法中先计算出需要移除的mq，再进行移除：上报至broker并移除本地的`processQueueTable`中的项。
+4.移除processQueue:在`updateProcessQueueTableInRebalance`方法中先计算出需要移除的mq，
+再进行移除：上报至broker并移除本地的`processQueueTable`中的项。
 
 5.添加processQueue:在`updateProcessQueueTableInRebalance`方法中，对于需要添加的processQueue，先用`LOCK_BATCH_MQ`请求对queue加锁。
 若加锁成功，先移除dirtyOffset，然后从broker查上次消费的位点(即`computePullFromWhere()`)，添加到PullRequestList中。
 为每个MessageQueue创建一个ProcessQueue对象并存入RebalanceImpl的processQueueTable队列中。
 
-6.执行`dispatchPullRequest()`方法，将Pull消息的请求对象PullRequest依次放入PullMessageService服务线程的阻塞队列pullRequestQueue中，待该服务线程取出后向Broker端发起Pull消息的请求。
-其中，可以重点对比下，RebalancePushImpl和RebalancePullImpl两个实现类的dispatchPullRequest()方法不同，RebalancePullImpl类里面的该方法为空。原因要到两种消费方式原理中找。
+6.执行`dispatchPullRequest()`方法，
+将Pull消息的请求对象PullRequest依次放入PullMessageService服务线程的阻塞队列pullRequestQueue中，
+待该服务线程取出后向Broker端发起Pull消息的请求。
+其中，可以重点对比下，RebalancePushImpl和RebalancePullImpl两个实现类的dispatchPullRequest()方法不同，
+RebalancePullImpl类里面的该方法为空。原因要到两种消费方式原理中找。
 
 >消息消费队列在同一消费组不同消费者之间的负载均衡，其核心设计理念是在一个消息消费队列在同一时间只允许被同一消费组内的一个消费者消费，一个消息消费者能同时消费多个消息队列。
 
